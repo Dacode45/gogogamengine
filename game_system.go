@@ -8,42 +8,53 @@ import (
 
 type GameSystem struct{
   world *World
+  started bool
+  ended bool
+  id string
+  BaseSystem
 }
 
-func (gS *GameSystem) Run(world *World, system_start <-chan bool, system_started chan<- bool, system_ended chan<- bool){
+
+func (gS *GameSystem) Run(world *World, system_start chan bool, system_end chan<- bool, force_end <-chan bool){
   gS.world = world
   gS.awakeProtocol()
   if <-system_start{
     all_entities_started := make(chan bool)
     go gS.startProtocol(gS.world.ECS.Entities, all_entities_started)
-    ss := <- all_entities_started
-    system_started <- ss
+    //fmt.Println("Game System Awake")
+    gS.started = <- all_entities_started
+    //fmt.Println("Game System Started: %v", gS.started)
+    system_start <- gS.started
     close(all_entities_started)
     //system_started <- ss
     gS.beforeUpdateProtocol()
     gS.CleanUp()
     for{ //change this into a select
-      fmt.Println("Update")
+      //fmt.Println("Update")
       select{
-        case dead := <-world.World_Alive:
-          fmt.Println("World is ", dead)
+        case <- force_end:
           break
         default:
-          update_protocol_finished := make(chan bool)
-          //fmt.Println("hi")
-          go gS.updateProtocol(gS.world.ECS.Entities, update_protocol_finished)
-          <-update_protocol_finished
-          gS.CleanUp() //death starts
+          if world.IsAlive(){
+            update_protocol_finished := make(chan bool)
+            //fmt.Println("hi")
+            go gS.updateProtocol(gS.world.ECS.Entities, update_protocol_finished)
+            <-update_protocol_finished
+            gS.CleanUp() //death starts
+          }else{
+            break
+          }
       }
     }
   }
-  system_ended <-true
+  gS.ended = true
+  system_end <- gS.ended
 }
 
 func (gS *GameSystem) awakeProtocol(){
   //Protocol safe. no CONCURENCY
   /*THESE LINES WILL ALWAYS RUN FIRST AND DO NOT NEED CONCURENCY WRORIES*/
-  fmt.Println(gS.world.ECS.Entities)
+  //fmt.Println(gS.world.ECS.Entities)
   for _, e := range gS.world.ECS.Entities {
     e.Awake()
   }
@@ -110,7 +121,7 @@ func (gS *GameSystem) startProtocol(entities map[string]*Entity, all_entities_st
   }
 
   start_protocol_error :=  <- finished_start_protocol
-  fmt.Println("finished start protocol", start_protocol_error)
+  //fmt.Println("finished start protocol", start_protocol_error)
   all_entities_started <- start_protocol_error
 
 }

@@ -6,37 +6,36 @@ import(
 )
 
 type ComponentCollection struct{
-  Components map[string]Component
+  components map[string]Component
 
 }
 
 func NewComponentCollection() *ComponentCollection{
   var CCS = ComponentCollection{}
-  CCS.Components = make(map[string]Component)
+  CCS.components = make(map[string]Component)
   return &CCS
 
 }
 
 
-func (c *ComponentCollection) RegisterComponent(comp Component) error {
+func (c *ComponentCollection) RegisterComponent(component Component) error {
   //Do stuff for the Component
-  component := comp.(*BaseComponent)
-  if _, ok := c.Components[component.id]; ok{
+  if _, ok := c.components[component.GetID()]; ok{
     return errors.New("Component with this name Already Exist!")
   }
-  c.Components[component.id] = component
+  c.components[component.GetID()] = component
   return nil
 }
 
 func (cc *ComponentCollection) GetComponent(id string) (Component, bool){
-  c, ok := cc.Components[id]
+  c, ok := cc.components[id]
   return c, ok
 }
 
 
 type Component interface{
 
-  GetId() string
+  GetID() string
   GetDesc() string
   GetEntity() *Entity
   SetEntity(e *Entity)
@@ -54,13 +53,16 @@ type BaseComponent struct{
   description string
   entity *Entity
   enabled bool
+
 }
 
 //if program crashed finished_update is false
 
 
-func (bC *BaseComponent) GetId() string{
-
+func (bC *BaseComponent) GetID() string{
+  if bC.id == "" {
+    bC.id = "BaseComponent"
+  }
   return bC.id
 }
 
@@ -91,20 +93,16 @@ func (bC *BaseComponent) FixedUpdate(){
 
 }
 func (bC *BaseComponent) Update(delta_time float64){
-  fmt.Println(bC, "Updating")
+  //fmt.Println(bC, "Updating")
 }
 
 func (bC *BaseComponent) SetEnabled(enabled bool){
-    if !bC.enabled && enabled{ //go from not enabled to enabled.
       bC.enabled = enabled
-      bC.Start()
-    }else{
-
-      bC.enabled = enabled
-    }
-
 }
 
+func (bC *BaseComponent) String() string{
+  return fmt.Sprintf("%b", bC.id)
+}
 func (bC *BaseComponent) Register(world World) error{
   //check to make sure it has all the right properties.
   if bC.id == "" || bC.description == ""{
@@ -117,22 +115,4 @@ func (bC *BaseComponent) Register(world World) error{
   }
   bC.SetEnabled(true)
   return nil
-}
-
-type ExampleComponent struct{
-  BaseComponent
-  word string
-}
-
-func (ec *ExampleComponent) Awake(){
-  ec.id = "Example"
-  ec.word = "Hello World"
-}
-
-func (ec *ExampleComponent) SayHello(){
-  fmt.Println(ec.word)
-}
-
-func (ec *ExampleComponent) Update(delta_time int){
-  ec.SayHello()
 }

@@ -47,8 +47,17 @@ func TestWorld(t *testing.T){
   world.AddEntity(e)
   go world.StartWorld()
   time.Sleep(time.Second*2)
-  fmt.Println("CLOSINGCLOSINGCLOSINGCLOSINGCLOSINGCLOSINGCLOSINGCLOSING")
   world.Close()
-  fmt.Println("CLOSINGCLOSINGCLOSINGCLOSINGCLOSINGCLOSINGCLOSINGCLOSING")
+}
 
+func TestSprites(t *testing.T){
+  fmt.Println("Starting Sprite Test\n")
+  world := NewWorld()
+  e := NewEntity()
+  speak := SpriteComponent{x:0, y:1, width:.5, height:.5}
+  e.AddComponent(&speak)
+  world.AddEntity(e)
+  go world.StartWorld()
+  time.Sleep(time.Second*2)
+  world.Close()
 }

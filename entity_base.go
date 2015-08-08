@@ -10,39 +10,76 @@ import (
 
 )
 
-type entityCollection struct{
+type EntityCollection struct{
   Entities map[string]*Entity
   num_updates  uint64
   should_update bool
+  entity_component_cache map[string]map[string]bool
 }
 
 
-func NewEntityCollection() *entityCollection{
-  var ECS = entityCollection{}
+func NewEntityCollection() *EntityCollection{
+  var ECS = EntityCollection{}
   ECS.Entities = make(map[string]*Entity)
-  println("Entity Collection ", &ECS)
+  ECS.entity_component_cache = make(map[string]map[string]bool)
   return &ECS
 }
 
-func (c *entityCollection) AddEntity(entity *Entity) error {
+func (c *EntityCollection) AddToComponentCache(cID string, e *Entity){
+  if _, ok := c.entity_component_cache[cID]; !ok{
+    m := make(map[string]bool)
+    c.entity_component_cache[cID] = m
+  }
+  c.entity_component_cache[cID][e.GetID()] = true
+}
+
+func (c *EntityCollection) RemoveFromComponentCache(cID string, e *Entity){
+  if m, ok := c.entity_component_cache[cID]; ok{
+    delete(m, e.GetID())
+  }
+}
+
+func (c *EntityCollection) AddEntity(entity *Entity) error {
   //Do stuff for the Component
   if _, ok := c.Entities[entity.id]; ok{
     return errors.New("Entity with this id Already Exist!")
   }
   c.Entities[entity.id] = entity
+  entity.ECS = c
+  //immediately add componetns to component cache
+  for compID, _ := range entity.components{
+    c.AddToComponentCache(compID, entity)
+  }
   return nil
+}
+
+func (c *EntityCollection) WithComponent(cID string) []*Entity {
+
+  toReturn := make([]*Entity, 0)
+  for entityID, _ := range c.entity_component_cache[cID]{
+    if entity, ok := c.Entities[entityID]; ok{
+      if entity.should_delete == false{
+
+        toReturn = append(toReturn, entity)
+      }
+    }
+  }
+  return toReturn
+
 }
 
 
 //Just keep tacking on Components to one entity class
 type Entity struct{
+  //Reference to EntityCollection
+  ECS *EntityCollection
+
   id string
   components  map[string]Component
   world *World
   parent *Entity
 
   enabled bool
-  can_enable bool
   should_delete bool
   last_update time.Time
   delta_time float64
@@ -50,31 +87,41 @@ type Entity struct{
   //Check everyting awakes and starts atleast once
   try_to_start bool
   try_to_awaken bool
-}
 
-var entityMutex = &sync.Mutex{}
+  entityMutex *sync.RWMutex
+
+}
 
 func NewEntity() *Entity{
-  return &Entity{id : strconv.Itoa( rand.Intn(1000000)), components:make(map[string]Component)}
+  return &Entity{
+    id : strconv.Itoa( rand.Intn(1000000)),
+    components:make(map[string]Component),
+    entityMutex: &sync.RWMutex{}}
 }
 
-func (e *Entity) GetId() string{
+func (e *Entity) GetID() string{
   return e.id
 }
 
 func (e *Entity) AddComponent(component Component) *Component{
 
 
-  if c, ok := e.components[component.GetId()]; ok{
-    //Component already attached
-    return &c
-  }
+    e.entityMutex.RLock()
+    defer e.entityMutex.RUnlock()
 
-  e.components[component.GetId()] = component
-  component.SetEntity(e)
-  component.SetEnabled(true)
-  component.Awake()
-  return &component
+      e.components[component.GetID()] = component
+      component.SetEntity(e)
+      component.SetEnabled(true)
+      component.Awake()
+      if e.try_to_start{
+        component.Start()
+      }
+      //check it has an Entity container
+      if e.ECS != nil{
+
+        e.ECS.AddToComponentCache(component.GetID(), e)
+      }
+      return &component
 
 }
 
@@ -94,8 +141,19 @@ func (e *Entity) RemoveComponent(id string) *Component{
     return nil
   }
   componentptr := &component
+  e.entityMutex.Lock()
+  defer e.entityMutex.Unlock()
   delete(e.components, id)
+  if e.ECS != nil{
+    e.ECS.RemoveFromComponentCache(component.GetID(), e)
+
+  }
   return componentptr
+}
+
+func (e *Entity) GetComponent(id string) (*Component, bool) {
+  comp, ok := e.components[id]
+  return &comp, ok
 }
 
 func (e *Entity) String() string{
@@ -103,21 +161,16 @@ func (e *Entity) String() string{
 }
 
 func (e *Entity) SetEnabled(enabled bool){
-  entityMutex.Lock()
-  if e.can_enable {
     e.enabled = enabled
-  }
-  entityMutex.Unlock()
 }
 
 func (e *Entity) Awake(){
-  e.can_enable = true
   e.SetEnabled(true)
   e.try_to_awaken = true
 }
 
 func (e *Entity) Start(bulk_start *sync.WaitGroup, finished_start chan<- string){
-  fmt.Println(bulk_start)
+  //fmt.Println(bulk_start)
   e.try_to_start = true
   e.last_update = time.Now()
   no_crash := e.id
@@ -129,7 +182,6 @@ func (e *Entity) Start(bulk_start *sync.WaitGroup, finished_start chan<- string)
 
   for _, component := range e.components{
     if component.IsEnabled(){
-
       component.Start()
     }
   }
@@ -162,10 +214,7 @@ func (e *Entity) Update(bulk_update *sync.WaitGroup, can_update <-chan bool, fin
 }
 
 func (e *Entity) Delete(){
-  if !e.should_delete{
-
     e.should_delete = true
-  }
 }
 
 func (e *Entity) CheckDelete() bool{
