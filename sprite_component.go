@@ -1,8 +1,8 @@
 package goengine
 
 import(
-
-  	"github.com/go-gl/gl/v4.1-core/gl"
+    "fmt"
+    "github.com/go-gl/gl/v4.1-core/gl"
 )
 
 type SpriteComponent struct{
@@ -34,10 +34,11 @@ func (sC *SpriteComponent) GraphicsInitialized() bool{
 func (sC *SpriteComponent) InitGraphics(){
   if (sC.vboID == 0){
     gl.GenBuffers(1, &sC.vboID)
+    fmt.Println(sC.vboID)
   }
 
   //first triangel
-  sC.vertexData = make([]float32, 12)
+  sC.vertexData = [12]float32
   sC.vertexData[0] = sC.x + sC.width
   sC.vertexData[1] = sC.y + sC.height
 
@@ -65,8 +66,8 @@ func (sC *SpriteComponent) InitGraphics(){
 }
 
 func (sC *SpriteComponent) Draw(){
+  //fmt.Println("Drawing")
   gl.BindBuffer(gl.ARRAY_BUFFER, sC.vboID)
-
   //first index off array
   gl.EnableVertexAttribArray(0)
   //Pointing opengl to the start of our data

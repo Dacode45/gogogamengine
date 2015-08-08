@@ -3,7 +3,7 @@ package goengine
 import "errors"
 
 type System interface{
-  Run(world *World, system_start chan bool, system_end chan<- bool, force_end <-chan bool )
+  Run(world *World, system_start <-chan bool, system_started chan<- bool, system_end chan<- bool, force_end <-chan bool )
   Started() bool
   Ended() bool
   GetID() string
@@ -11,6 +11,7 @@ type System interface{
 }
 
 type BaseSystem struct{
+  world *World
   started bool
   ended bool
   id string

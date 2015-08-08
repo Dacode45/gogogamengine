@@ -55,6 +55,7 @@ func (c *EntityCollection) AddEntity(entity *Entity) error {
 
 func (c *EntityCollection) WithComponent(cID string) []*Entity {
 
+//  fmt.Println("toReturn")
   toReturn := make([]*Entity, 0)
   for entityID, _ := range c.entity_component_cache[cID]{
     if entity, ok := c.Entities[entityID]; ok{

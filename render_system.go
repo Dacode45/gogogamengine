@@ -9,7 +9,6 @@ import (
 )
 
 type Renderer struct{
-  world *World
   keyCallback glfw.KeyCallback
   BaseSystem
 }
@@ -24,7 +23,8 @@ func (renderer *Renderer) Init(){
     runtime.LockOSThread()
 }
 
-func (renderer *Renderer) Run(world *World, system_start chan bool, system_end chan<- bool, force_end <-chan bool ){
+func (renderer *Renderer) Run(world *World, system_start <-chan bool, system_started chan<- bool, system_end chan<- bool, force_end <-chan bool ){
+  renderer.world = world
   renderer.Init()
 
   if err:= glfw.Init(); err != nil{
@@ -37,16 +37,21 @@ func (renderer *Renderer) Run(world *World, system_start chan bool, system_end c
   glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)
   glfw.WindowHint(glfw.Resizable, glfw.False)
 
-  window, err := glfw.CreateWindow(800, 600, "OpenGL", nil, nil)
+  window, window_error := glfw.CreateWindow(800, 600, "OpenGL", nil, nil)
+
+  if window_error != nil{
+    fmt.Println("oops")
+    panic (window_error)
+  }
+  fmt.Println("Buffer")
   defer func(){
     window.Destroy()
     glfw.Terminate()
+    fmt.Println("ending")
+    renderer.ended = true
     system_end <-true
   }()
 
-  if err != nil{
-    panic (err)
-  }
 
   window.MakeContextCurrent()
 
@@ -61,25 +66,29 @@ func (renderer *Renderer) Run(world *World, system_start chan bool, system_end c
   window.SetKeyCallback(renderer.keyCallback)
 
   <-system_start
-  system_start <- true
+  renderer.started = true
+  system_started <- true
+  gl.ClearDepth(1.0)
+
+
+  L:
   for !window.ShouldClose(){
+
     select{
       case <- force_end:
-        break
+        fmt.Println("Should End")
+        break L
       default:
         renderer.drawGame()
         window.SwapBuffers()
         glfw.PollEvents()
     }
   }
-  renderer.ended = true
-  system_end <- true
 }
 
 
 
 func (renderer *Renderer) drawGame(){
-  gl.ClearDepth(1.0)
   gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
   entities := renderer.world.ECS.WithComponent("SpriteComponent")
@@ -96,5 +105,4 @@ func (renderer *Renderer) drawGame(){
     }
 
   }
-
 }

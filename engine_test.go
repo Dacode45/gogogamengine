@@ -38,19 +38,20 @@ func TestAddComponent(t *testing.T){
   //Fixing this requires reflection
 }
 
-func TestWorld(t *testing.T){
-  fmt.Println("Starting TestWorld\n")
-  world := NewWorld()
-  e := NewEntity()
-  speak := Speak{say:"Do It Work? It do!"}
-  e.AddComponent(&speak)
-  world.AddEntity(e)
-  go world.StartWorld()
-  time.Sleep(time.Second*2)
-  world.Close()
-}
+// func TestWorld(t *testing.T){
+//   fmt.Println("Starting TestWorld\n")
+//   world := NewWorld()
+//   e := NewEntity()
+//   speak := Speak{say:"Do It Work? It do!"}
+//   e.AddComponent(&speak)
+//   world.AddEntity(e)
+//   go world.StartWorld()
+//   time.Sleep(time.Second*2)
+//   world.Close()
+// }
 
 func TestSprites(t *testing.T){
+  time.Sleep(time.Second*1)
   fmt.Println("Starting Sprite Test\n")
   world := NewWorld()
   e := NewEntity()
@@ -58,6 +59,6 @@ func TestSprites(t *testing.T){
   e.AddComponent(&speak)
   world.AddEntity(e)
   go world.StartWorld()
-  time.Sleep(time.Second*2)
+  time.Sleep(time.Second*10)
   world.Close()
 }
