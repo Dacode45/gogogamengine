@@ -11,7 +11,7 @@ type SpriteComponent struct{
   width float32
   height float32
   vboID uint32
-  vertexData []float32
+  vertexData [12]float32
   graphics_initialized bool
   BaseComponent
 }
@@ -38,7 +38,7 @@ func (sC *SpriteComponent) InitGraphics(){
   }
 
   //first triangel
-  sC.vertexData = [12]float32
+
   sC.vertexData[0] = sC.x + sC.width
   sC.vertexData[1] = sC.y + sC.height
 

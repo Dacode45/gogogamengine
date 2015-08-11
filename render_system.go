@@ -70,6 +70,15 @@ func (renderer *Renderer) Run(world *World, system_start <-chan bool, system_sta
   system_started <- true
   gl.ClearDepth(1.0)
 
+  var vboID uint32
+  gl.GenBuffer(1, &vboID)
+  var vertexData = []float32{
+    1, 1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1,
+  }
+  gl.BindBuffer(gl.ARRAY_BUFFER, vboID)
+  gl.BufferData(gl.ARRAY_BUFFER, len(vertexData)*4, gl.Ptr(vertexData), gl.STATIC_DRAW)
+
+  gl.BindBuffer(gl.ARRAY_BUFFER, 0)
 
   L:
   for !window.ShouldClose(){
@@ -79,10 +88,22 @@ func (renderer *Renderer) Run(world *World, system_start <-chan bool, system_sta
         fmt.Println("Should End")
         break L
       default:
-        renderer.drawGame()
+        //renderer.drawGame()
+        gl.BindBuffer(gl.ARRAY_BUFFER, vboID)
+        gl.EnableVertexAttribArray(0)
+
+        gl.VertexAttribPointer(0, 2, gl.FLOAT, false, 0, gl.PtrOffset(0))
+
+        gl.DrawArrays(gl.TRIANGLES, 0, 2, 6)
+
+        gl.DisableVertexAttribArray(0)
         window.SwapBuffers()
         glfw.PollEvents()
     }
+  }
+
+  if vboID != 0 {
+    gl.DeleteBuffers(1, &vboID)
   }
 }
 
@@ -91,18 +112,19 @@ func (renderer *Renderer) Run(world *World, system_start <-chan bool, system_sta
 func (renderer *Renderer) drawGame(){
   gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-  entities := renderer.world.ECS.WithComponent("SpriteComponent")
-  for _, entity := range entities{
-    comp, exist := entity.GetComponent("SpriteComponent")
-    if exist{
-      sprite, ok := (*comp).(Renderable)
-      if ok{
-        if !sprite.GraphicsInitialized(){
-          sprite.InitGraphics()
-        }
-        sprite.Draw()
-      }
-    }
+  // entities := renderer.world.ECS.WithComponent("SpriteComponent")
+  // for _, entity := range entities{
+  //   comp, exist := entity.GetComponent("SpriteComponent")
+  //   if exist{
+  //     sprite, ok := (*comp).(Renderable)
+  //     if ok{
+  //       if !sprite.GraphicsInitialized(){
+  //         sprite.InitGraphics()
+  //       }
+  //       sprite.Draw()
+  //     }
+  //   }
 
-  }
+  //}
+
 }
