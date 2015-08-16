@@ -4,15 +4,15 @@ import "testing"
 import "time"
 import "fmt"
 
-func TestCreateEntity(t *testing.T){
-  e := NewEntity()
-  fmt.Println(e)
-}
-
-func TestAddingEntity(t *testing.T){
-  world := NewWorld()
-  world.AddEntity(NewEntity())
-}
+// func TestCreateEntity(t *testing.T){
+//   e := NewEntity()
+//   fmt.Println(e)
+// }
+//
+// func TestAddingEntity(t *testing.T){
+//   world := NewWorld()
+//   world.AddEntity(NewEntity())
+// }
 
 //Test component
 type Speak struct{
@@ -28,15 +28,15 @@ func (s *Speak) Update(delta_time float64){
   }
 }
 
-func TestAddComponent(t *testing.T){
-  fmt.Println("Starting TestAddComponent\n")
-  world := NewWorld()
-  e := NewEntity()
-  world.AddEntity(e)
-  speak := Speak{say:"Hello World"}
-  e.AddComponent(&speak)
-  //Fixing this requires reflection
-}
+// func TestAddComponent(t *testing.T){
+//   fmt.Println("Starting TestAddComponent\n")
+//   world := NewWorld()
+//   e := NewEntity()
+//   world.AddEntity(e)
+//   speak := Speak{say:"Hello World"}
+//   e.AddComponent(&speak)
+//   //Fixing this requires reflection
+// }
 
 // func TestWorld(t *testing.T){
 //   fmt.Println("Starting TestWorld\n")
@@ -52,7 +52,7 @@ func TestAddComponent(t *testing.T){
 
 func TestSprites(t *testing.T){
   time.Sleep(time.Second*1)
-  fmt.Println("Starting Sprite Test\n")
+  fmt.Println("Starting Sprite Test")
   world := NewWorld()
   e := NewEntity()
   speak := SpriteComponent{x:0, y:1, width:.5, height:.5}
