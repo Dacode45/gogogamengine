@@ -1,4 +1,4 @@
-package goengine
+package gogogamengine
 
 type Vector2d struct{
   x float32

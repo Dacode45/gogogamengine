@@ -1,4 +1,4 @@
-package goengine
+package gogogamengine
 
 import "github.com/go-gl/gl/v4.1-core/gl"
 
@@ -7,9 +7,10 @@ type SpriteComponent struct {
 	y                    float32
 	width                float32
 	height               float32
+	vaoID								 uint32
 	vboID                uint32
 	vertexData           [12]float32
-	graphics_initialized bool
+	GraphicsInitialized  bool
 	BaseComponent
 }
 
@@ -19,17 +20,29 @@ func (sC *SpriteComponent) GetID() string {
 	}
 	return sC.id
 }
-
-func (sC *SpriteComponent) SetDimensions() {
-
+func (sC *SpriteComponent) SetPosition(x, y float32){
+	sC.x = x
+	sC.y = y
+	if sC.GraphicsInitialized == true{
+		sC.ReloadGraphics()
+	}
+}
+//Sets the dimensions of Sprite
+func (sC *SpriteComponent) SetDimensions(width, height float32) {
+	sC.width = width
+	sC.height = height
+	if sC.GraphicsInitialized == true{
+		sC.ReloadGraphics()
+	}
 }
 
-func (sC *SpriteComponent) GraphicsInitialized() bool {
-	return sC.graphics_initialized
-}
-
-func (sC *SpriteComponent) InitGraphics() {
-	if sC.vboID == 0 {
+//After Changing Position or Dimensions ReloadGraphics
+func (sC *SpriteComponent) ReloadGraphics(){
+	if sC.vaoID == 0{
+		gl.GenVertexArrays(1, &sC.vaoID)
+	}
+	gl.BindVertexArray(sC.vaoID)
+	if sC.vboID == 0{
 		gl.GenBuffers(1, &sC.vboID)
 	}
 
@@ -57,23 +70,9 @@ func (sC *SpriteComponent) InitGraphics() {
 	gl.BufferData(gl.ARRAY_BUFFER, len(sC.vertexData)*4, gl.Ptr(sC.vertexData), gl.STATIC_DRAW)
 	//unbind buffer
 	gl.BindBuffer(gl.ARRAY_BUFFER, 0)
+	gl.BindVertexArray(0)
 
-	sC.graphics_initialized = true
-}
-
-func (sC *SpriteComponent) Draw() {
-	//fmt.Println("Drawing")
-	gl.BindBuffer(gl.ARRAY_BUFFER, sC.vboID)
-	//first index off array
-	gl.EnableVertexAttribArray(0)
-	//Pointing opengl to the start of our data
-	//gl.VertexAttribPointer(index, size of 1 vertex (num elements), type, Normalize?, stride, pointer for interlieved)
-	gl.VertexAttribPointer(0, 2, gl.FLOAT, false, 0, gl.Ptr(nil))
-	//gl.DrawArrays(mode (quads, triangles, points), first element, how many to draw)
-	gl.DrawArrays(gl.TRIANGLES, 0, 6)
-	gl.DisableVertexAttribArray(0)
-
-	gl.BindBuffer(gl.ARRAY_BUFFER, 0)
+	sC.GraphicsInitialized = true
 }
 
 func (sC *SpriteComponent) Destroy() {

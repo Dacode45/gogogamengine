@@ -1,4 +1,4 @@
-package goengine
+package gogogamengine
 
 import "testing"
 import "time"
@@ -50,15 +50,17 @@ func (s *Speak) Update(delta_time float64){
 //   world.Close()
 // }
 
+func TestRenderer(t *testing.T){
+  renderer := Renderer{}
+  renderer.Loop()
+}
+
 func TestSprites(t *testing.T){
   time.Sleep(time.Second*1)
   fmt.Println("Starting Sprite Test")
   world := NewWorld()
-  e := NewEntity()
-  speak := SpriteComponent{x:0, y:1, width:.5, height:.5}
-  e.AddComponent(&speak)
-  world.AddEntity(e)
   go world.StartWorld()
-  time.Sleep(time.Second*10)
+  //time.Sleep(time.Second*5)
+  fmt.Println("closing")
   world.Close()
 }

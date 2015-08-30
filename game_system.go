@@ -1,4 +1,4 @@
-package goengine
+package gogogamengine
 
 import (
   "sync"
